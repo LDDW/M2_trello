@@ -1,37 +1,48 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+import { Stack } from "expo-router";
+import "react-native-reanimated";
+import * as eva from "@eva-design/eva";
+import { ApplicationProvider } from "@ui-kitten/components";
+import { Text } from "react-native";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ApplicationProvider {...eva} theme={eva.light}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="singup"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="singin"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="(authenticated)/board"
+          options={{
+            gestureEnabled: false,
+            headerTitle: "Mon Tableau",
+            // headerRight: () => <Text>Right</Text>,
+            // headerLeft: () => <Text>Left</Text>,
+            headerBackVisible: false,
+            headerStyle: {
+              backgroundColor: "#3366FF",
+            },
+            headerTitleStyle: {
+              color: "white",
+            },
+          }}
+        />
         <Stack.Screen name="+not-found" />
       </Stack>
-    </ThemeProvider>
+
+      {/* <HomeScreen /> */}
+    </ApplicationProvider>
   );
 }
