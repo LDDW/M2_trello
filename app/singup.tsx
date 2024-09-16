@@ -44,6 +44,7 @@ export default function SingIn() {
           label={<Text>Mot de passe</Text>}
           placeholder="Mot de passe"
           onChangeText={setPassword}
+          secureTextEntry
         />
         <Button onPress={handleSingUp} text="Inscription" />
       </View>

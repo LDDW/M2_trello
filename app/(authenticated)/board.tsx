@@ -15,11 +15,19 @@ import { Input } from "@ui-kitten/components";
 import RNModal from "@/components/common/RNModal";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  createSection,
+  deleteSection,
+  fetchSections,
+  updateSection,
+} from "@/libs/firestore";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Board() {
   const { user } = useAuth();
+  const [sections, setSections] = React.useState<{ id: string }[]>([]);
+  const [sectionTitle, setSectionTitle] = React.useState("");
   const [modalVisible, setModalVisible] = React.useState(false);
   const [modalStatus, setModalStatus] = React.useState("");
 
@@ -27,6 +35,60 @@ export default function Board() {
     setModalVisible(state);
     setModalStatus(status);
   };
+
+  const handleTitleSection = (text: string) => {
+    setSectionTitle(text);
+  };
+
+  const handleCreateSection = async () => {
+    if (sectionTitle.trim() === "") {
+      alert("Le titre de la section ne peut pas être vide.");
+      return;
+    }
+    if (user?.uid) {
+      await createSection(sectionTitle, user.uid);
+      const data = await fetchSections(user.uid);
+      setSections(data);
+    }
+  };
+
+  const handleUpdateSection = async (sectionId: string, newTitle: string) => {
+    if (newTitle.trim() === "") {
+      alert("Le titre de la section ne peut pas être vide.");
+      return;
+    }
+
+    await updateSection(sectionId, newTitle);
+
+    if (user?.uid) {
+      const updatedSections = await fetchSections(user.uid);
+      setSections(updatedSections);
+    }
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    if (user?.uid) {
+      try {
+        await deleteSection(sectionId);
+        const updatedSections = sections.filter(
+          (section) => section.id !== sectionId
+        );
+        setSections(updatedSections);
+      } catch (error) {
+        console.error("Error deleting section:", error);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      if (user?.uid) {
+        const data = await fetchSections(user.uid);
+        setSections(data);
+      }
+    };
+    fetchData();
+  }, [user]);
 
   if (!user) {
     return <Text>Loading...</Text>;
@@ -41,15 +103,21 @@ export default function Board() {
           hidden={false}
         />
         <ScrollView horizontal={true}>
-          {Array.from({ length: 2 }).map((_, i) => (
-            <BoardSection key={i} handleModalSection={handleModal} />
+          {sections.map((section) => (
+            <BoardSection
+              key={section.id}
+              data={section}
+              handleUpdateSection={handleUpdateSection}
+              handleDeleteSection={handleDeleteSection}
+            />
           ))}
+
           <TouchableOpacity
             style={styles.button}
             onPress={() => handleModal(true, "create")}
           >
             <Ionicons name="add" size={16} color="black" />
-            <Text style={{ fontSize: 13 }}>Ajouter une autre liste</Text>
+            <Text style={{ fontSize: 13 }}>Ajouter une liste</Text>
           </TouchableOpacity>
         </ScrollView>
       </LinearGradient>
@@ -65,11 +133,23 @@ export default function Board() {
         }
       >
         <>
-          <Input label={<Text>Titre</Text>} />
-          <Button onPress={() => handleModal(false, "")} text="VALIDER" />
+          <Input
+            label={<Text>Titre</Text>}
+            value={sectionTitle}
+            onChangeText={handleTitleSection}
+          />
+          <Button
+            onPress={() => {
+              handleCreateSection();
+              handleModal(false, "");
+            }}
+            text="VALIDER"
+          />
           {modalStatus === "edit" && (
             <Button
-              onPress={() => handleModal(false, "")}
+              onPress={() => {
+                handleModal(false, "");
+              }}
               text="SUPPRIMER"
               buttonStyle={{ backgroundColor: "#e43b10" }}
             />

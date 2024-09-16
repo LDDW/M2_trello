@@ -43,6 +43,7 @@ export default function SingIn() {
           placeholder="Mot de passe"
           value={password}
           onChangeText={setPassword}
+          secureTextEntry
         />
         <Button onPress={handleSingIn} text="Connexion" />
       </View>

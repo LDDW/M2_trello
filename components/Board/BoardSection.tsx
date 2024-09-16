@@ -17,26 +17,47 @@ import RNModal from "../common/RNModal";
 const { width, height } = Dimensions.get("window");
 
 interface BoardSectionProps {
-  handleModalSection: (state: boolean, status: string) => void;
+  handleUpdateSection: (id: string, title: string) => void;
+  handleDeleteSection: (id: string) => void;
+  data: any;
 }
 
 export default function BoardSection({
-  handleModalSection,
+  handleUpdateSection,
+  handleDeleteSection,
+  data,
 }: BoardSectionProps) {
-  const [modalVisible, setModalVisible] = React.useState(false);
-  const [modalStatus, setModalStatus] = React.useState("");
-  const [cards, setCards] = React.useState([]);
+  const { title, id } = data;
 
-  const handleModal = (state: boolean, status = "") => {
-    setModalVisible(state);
+  const [modalCard, setModalCard] = React.useState(false);
+  const [modalStatus, setModalStatus] = React.useState("");
+  const [modalSection, setModalSection] = React.useState(false);
+  const [cards, setCards] = React.useState([]);
+  const [sectionTitle, setSectionTitle] = React.useState(title);
+
+  const handleModalCard = (state: boolean, status = "") => {
+    setModalCard(state);
     setModalStatus(status);
   };
 
-  const handleCreateCard = () => {};
+  const handleModalSection = (state: boolean) => {
+    setModalSection(state);
+    if (state === true) {
+      setSectionTitle(title);
+    } else {
+      setSectionTitle("");
+    }
+  };
 
-  const handleUpdateCard = () => {};
+  const handleSaveChangesSection = () => {
+    handleUpdateSection(id, sectionTitle);
+    handleModalSection(false);
+  };
 
-  const handleDeleteCard = () => {};
+  const handleDeletSection = () => {
+    handleDeleteSection(id);
+    handleModalSection(false);
+  };
 
   const renderItem = ({ item, drag, isActive }: RenderItemParams<any>) => {
     return (
@@ -46,7 +67,7 @@ export default function BoardSection({
           { backgroundColor: isActive ? "#f0f0f0" : "#F6F8FC" },
         ]}
         onLongPress={drag}
-        onPress={() => handleModal(true, "edit")}
+        onPress={() => handleModalCard(true, "edit")}
       >
         <Text>{item.text}</Text>
       </TouchableOpacity>
@@ -57,10 +78,10 @@ export default function BoardSection({
     <>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerText}>BoardSection</Text>
+          <Text style={styles.headerText}>{title}</Text>
           <TouchableOpacity
             style={styles.dropdownItem}
-            onPress={() => handleModalSection(true, "edit")}
+            onPress={() => handleModalSection(true)}
           >
             <Ionicons name="ellipsis-horizontal" size={20} color="black" />
           </TouchableOpacity>
@@ -77,7 +98,7 @@ export default function BoardSection({
         <View style={styles.footer}>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => handleModal(true, "create")}
+            onPress={() => handleModalCard(true, "create")}
           >
             <Ionicons name="add" size={16} color="white" />
             <Text style={{ fontSize: 14, color: "white" }}>
@@ -87,10 +108,36 @@ export default function BoardSection({
         </View>
       </View>
 
+      <RNModal
+        modalVisible={modalSection}
+        handleModal={() => handleModalSection(false)}
+        title={"Modifier la section"}
+      >
+        <>
+          <Input
+            label={<Text>Titre</Text>}
+            value={sectionTitle}
+            onChangeText={setSectionTitle}
+          />
+          <Button
+            onPress={() => {
+              handleSaveChangesSection();
+            }}
+            text="SAUVEGARDER"
+          />
+
+          <Button
+            onPress={() => handleDeletSection()}
+            text="SUPPRIMER"
+            buttonStyle={{ backgroundColor: "#e43b10" }}
+          />
+        </>
+      </RNModal>
+
       {/* modal */}
       <RNModal
-        modalVisible={modalVisible}
-        handleModal={handleModal}
+        modalVisible={modalCard}
+        handleModal={() => handleModalCard(false)}
         title={
           modalStatus === "create"
             ? "Ajouter une nouvelle carte"
@@ -101,12 +148,12 @@ export default function BoardSection({
           <Input label={<Text>Titre</Text>} />
           <Input multiline={true} label={<Text>Description</Text>} />
           <Button
-            onPress={() => handleModal(false)}
+            onPress={() => handleModalCard(false)}
             text={modalStatus === "create" ? "VALIDER" : "SAUVEGARDER"}
           />
           {modalStatus === "edit" && (
             <Button
-              onPress={() => handleModal(false)}
+              onPress={() => handleModalCard(false)}
               text="SUPPRIMER"
               buttonStyle={{ backgroundColor: "#e43b10" }}
             />
