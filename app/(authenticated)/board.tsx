@@ -34,6 +34,7 @@ export default function Board() {
   const handleModal = (state: boolean, status: string) => {
     setModalVisible(state);
     setModalStatus(status);
+    setSectionTitle("");
   };
 
   const handleTitleSection = (text: string) => {

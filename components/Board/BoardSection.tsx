@@ -13,6 +13,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Input } from "@ui-kitten/components";
 import Button from "../common/Button";
 import RNModal from "../common/RNModal";
+import { createCard, deleteCard, fetchCardsForSection, updateCard } from "@/libs/firestore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -20,6 +21,14 @@ interface BoardSectionProps {
   handleUpdateSection: (id: string, title: string) => void;
   handleDeleteSection: (id: string) => void;
   data: any;
+}
+
+interface Card {
+  id: string;
+  title: string;
+  description: string;
+  index: number;
+  sectionId: string;
 }
 
 export default function BoardSection({
@@ -32,13 +41,56 @@ export default function BoardSection({
   const [modalCard, setModalCard] = React.useState(false);
   const [modalStatus, setModalStatus] = React.useState("");
   const [modalSection, setModalSection] = React.useState(false);
-  const [cards, setCards] = React.useState([]);
+  const [cards, setCards] = React.useState<Card[]>([]);
   const [sectionTitle, setSectionTitle] = React.useState(title);
+  const [cardTitle, setCardTitle] = React.useState("");
+  const [cardDescription, setCardDescription] = React.useState("");
+  const [currentCard, setCurrentCard] = React.useState<Card | null>(null);
 
-  const handleModalCard = (state: boolean, status = "") => {
+  const loadCards = async () => {
+    const fetchedCards = await fetchCardsForSection(id);
+    if (fetchedCards) {
+      setCards(fetchedCards);
+    }
+  };
+
+  const handleModalCard = (state: boolean, status = "", card?: Card) => {
     setModalCard(state);
     setModalStatus(status);
+
+    if (status === "create") {
+      setCardTitle("");
+      setCardDescription("");
+    } else if (status === "edit" && card) {
+      setCurrentCard(card); // stocker la carte actuelle
+      setCardTitle(card.title);
+      setCardDescription(card.description);
+    }
   };
+
+  const handleCreateNewCard = async () => {
+    const index = cards.length;
+    await createCard(cardTitle, cardDescription, id, index);
+    setModalCard(false);
+    loadCards();
+  };
+
+  const handleUpdateCard = async () => {
+    if (currentCard) {
+      await updateCard(currentCard.id, cardTitle, cardDescription);
+      setModalCard(false);
+      loadCards();
+    }
+  };
+
+  const handleDeleteCard = async () => {
+    if (currentCard) {
+      await deleteCard(currentCard.id);
+      setModalCard(false);
+      loadCards();
+    }
+  };
+
 
   const handleModalSection = (state: boolean) => {
     setModalSection(state);
@@ -59,6 +111,10 @@ export default function BoardSection({
     handleModalSection(false);
   };
 
+  React.useEffect(() => {
+    loadCards();
+  }, [id]);
+
   const renderItem = ({ item, drag, isActive }: RenderItemParams<any>) => {
     return (
       <TouchableOpacity
@@ -67,9 +123,9 @@ export default function BoardSection({
           { backgroundColor: isActive ? "#f0f0f0" : "#F6F8FC" },
         ]}
         onLongPress={drag}
-        onPress={() => handleModalCard(true, "edit")}
+        onPress={() => handleModalCard(true, "edit", item)}
       >
-        <Text>{item.text}</Text>
+        <Text>{item.title}</Text>
       </TouchableOpacity>
     );
   };
@@ -145,6 +201,40 @@ export default function BoardSection({
         }
       >
         <>
+          <Input
+            label={<Text>Titre</Text>}
+            value={cardTitle}
+            onChangeText={setCardTitle}
+          />
+          <Input
+            multiline={true}
+            label={<Text>Description</Text>}
+            value={cardDescription}
+            onChangeText={setCardDescription}
+          />
+          <Button
+              onPress={modalStatus === "create" ? handleCreateNewCard : handleUpdateCard}
+              text={modalStatus === "create" ? "VALIDER" : "SAUVEGARDER"}
+          />
+          {modalStatus === "edit" && (
+            <Button
+              onPress={handleDeleteCard}
+              text="SUPPRIMER"
+              buttonStyle={{ backgroundColor: "#e43b10" }}
+            />
+          )}
+        </>
+      </RNModal>
+      {/* <RNModal
+        modalVisible={modalCard}
+        handleModal={() => handleModalCard(false)}
+        title={
+          modalStatus === "create"
+            ? "Ajouter une nouvelle carte"
+            : "Modifier la carte"
+        }
+      >
+        <>
           <Input label={<Text>Titre</Text>} />
           <Input multiline={true} label={<Text>Description</Text>} />
           <Button
@@ -159,7 +249,7 @@ export default function BoardSection({
             />
           )}
         </>
-      </RNModal>
+      </RNModal> */}
     </>
   );
 }
